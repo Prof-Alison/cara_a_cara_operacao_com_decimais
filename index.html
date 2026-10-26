@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cara a Cara - Decimais</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #1e1b4b; color: #f8fafc; min-height: 100vh; }
+  .hidden { display: none !important; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; position: relative; z-index: 2; }
+
+  /* Fundo Cara a Cara */
+  .fundo { position: fixed; inset: 0; z-index: 0; display: grid; grid-template-columns: repeat(10, 1fr); grid-auto-rows: 1fr; gap: 2px; background: #0f0d2e; }
+  .fundo.oculto { display: none; }
+  .tile { position: relative; overflow: hidden; background: linear-gradient(160deg, #312e81, #1e1b4b); display: flex; align-items: flex-end; justify-content: center; }
+  .tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .tile span { position: relative; z-index: 1; width: 100%; text-align: center; font-size: 9px; padding: 2px 3px; background: rgba(15, 13, 46, 0.8); color: #e0e7ff; }
+  .fundo::after { content: ''; position: absolute; inset: 0; background: rgba(15, 13, 46, 0.55); }
+
+  .painel { background: #312e81; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .tela-inicio { position: fixed; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .tela-inicio .caixa { background: rgba(49, 46, 129, 0.95); border: 3px solid #f59e0b; border-radius: 16px; padding: 28px; width: min(460px, 92vw); text-align: center; box-shadow: 0 0 40px rgba(0, 0, 0, 0.6); }
+  .logo { margin: 0 0 6px; font-size: 44px; font-weight: 900; color: #fde68a; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 3px 0 #b45309, 0 0 18px rgba(245, 158, 11, 0.6); line-height: 1.1; }
+  .logo span { display: block; font-size: 22px; letter-spacing: 8px; color: #f59e0b; text-shadow: 0 2px 0 #78350f; }
+  .tela-inicio .sub { margin: 14px 0 18px; font-size: 14px; color: #c7d2fe; line-height: 1.4; }
+  h1 { margin: 0 0 12px; font-size: 26px; text-align: center; }
+  label { display: block; margin-bottom: 12px; font-size: 16px; text-align: left; }
+  input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 18px; margin-top: 6px; }
+  .btn { background: #f59e0b; color: #1e1b4b; border: none; border-radius: 8px; padding: 12px 20px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 4px; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.sec { background: #64748b; color: #fff; }
+  .status { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; background: #312e81; padding: 12px; border-radius: 12px; margin-bottom: 12px; font-size: 15px; }
+  .mensagem { min-height: 48px; padding: 12px 16px; border-radius: 10px; background: #1e1b4b; margin-bottom: 12px; font-size: 15px; line-height: 1.4; }
+  .mensagem.ok { border-left: 5px solid #22c55e; }
+  .mensagem.erro { border-left: 5px solid #ef4444; }
+  .mensagem.info { border-left: 5px solid #38bdf8; }
+  .rotulo { font-size: 17px; font-weight: bold; margin: 0 0 14px; text-align: center; }
+  .dica { font-size: 14px; color: #c7d2fe; text-align: center; margin: -6px 0 12px; }
+  .conta { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 26px; margin-bottom: 16px; flex-wrap: wrap; }
+  .conta input { width: 140px; padding: 8px; font-size: 22px; text-align: center; border-radius: 8px; border: none; }
+  .atributos { display: flex; flex-direction: column; gap: 10px; align-items: stretch; max-width: 420px; margin: 0 auto; }
+  .atributos .btn { margin: 0; }
+  .acoes { text-align: center; margin-top: 12px; }
+  
+  /* Grid e Estilo das Cartas */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+  .card { position: relative; background: #1e1b4b; border: 3px solid #475569; border-radius: 10px; padding: 8px 6px; min-height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; transition: transform 0.2s, background 0.2s; }
+  .card img { width: 54px; height: 54px; object-fit: cover; object-position: top; border-radius: 6px; margin-bottom: 4px; }
+  .card .serie { font-size: 10px; color: #a5b4fc; margin-bottom: 2px; }
+  .card .nome { font-size: 13px; font-weight: bold; }
+  .card.off { opacity: 0.5; pointer-events: none; border-style: dotted; }
+  .card.off .nome { text-decoration: line-through; }
+  .card.off::after { content: '✕'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: bold; color: #ef4444; background: rgba(15, 13, 46, 0.55); border-radius: 7px; }
+  .card.cair { animation: cair 0.9s ease-in forwards; pointer-events: none; }
+  @keyframes cair {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(160px) rotate(14deg); opacity: 0; }
+  }
+  .card.clicavel { cursor: pointer; }
+  .card.clicavel:hover { transform: translateY(-3px); background: #312e81; }
+  .card.secreta { border-style: dashed; border-color: #f59e0b; background: repeating-linear-gradient(45deg, #1e1b4b, #1e1b4b 10px, #312e81 10px, #312e81 20px); }
+  .card.secreta .nome { font-size: 30px; color: #f59e0b; }
+
+  /* Certificado elaborado */
+  .cert-wrap { padding: 8px 0 4px; }
+  .cert { position: relative; max-width: 680px; margin: 0 auto; padding: 12px; border-radius: 14px; background: linear-gradient(135deg, #b45309, #fde68a 25%, #b45309 50%, #fde68a 75%, #b45309); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); }
+  .cert-miolo { position: relative; background: radial-gradient(circle at 50% 35%, #fffdf5, #fdf3d0 80%); color: #1e1b4b; border-radius: 8px; padding: 32px 36px 28px; text-align: center; font-family: Georgia, 'Times New Roman', serif; overflow: hidden; }
+  .cert-miolo::before { content: ''; position: absolute; inset: 10px; border: 2px solid #b45309; border-radius: 4px; pointer-events: none; }
+  .cert-miolo::after { content: ''; position: absolute; inset: 15px; border: 1px dashed #d97706; border-radius: 3px; pointer-events: none; }
+  .cert-canto { position: absolute; font-size: 26px; color: #b45309; z-index: 1; line-height: 1; }
+  .cert-canto.tl { top: 18px; left: 22px; }
+  .cert-canto.tr { top: 18px; right: 22px; }
+  .cert-canto.bl { bottom: 18px; left: 22px; }
+  .cert-canto.br { bottom: 18px; right: 22px; }
+  .cert-marca { position: relative; z-index: 1; font-family: Arial, Helvetica, sans-serif; font-size: 11px; letter-spacing: 4px; color: #92400e; text-transform: uppercase; }
+  .cert-titulo { position: relative; z-index: 1; margin: 6px 0 0; font-size: 40px; font-weight: bold; letter-spacing: 4px; color: #1e1b4b; text-transform: uppercase; }
+  .cert-sub { position: relative; z-index: 1; font-style: italic; font-size: 17px; color: #92400e; margin-bottom: 8px; }
+  .cert-ornamento { position: relative; z-index: 1; height: 14px; margin: 6px auto 12px; width: 70%; background: linear-gradient(90deg, transparent, #b45309 20%, #facc15 50%, #b45309 80%, transparent); border-radius: 2px; opacity: 0.85; }
+  .cert-texto { position: relative; z-index: 1; margin: 6px 0; font-size: 16px; color: #374151; }
+  .cert-nome { position: relative; z-index: 1; margin: 8px 0 6px; font-size: 30px; font-weight: bold; color: #0f0d2e; text-transform: uppercase; letter-spacing: 1px; }
+  .cert-nome::after { content: ''; display: block; width: 60%; height: 2px; margin: 6px auto 0; background: linear-gradient(90deg, transparent, #b45309, transparent); }
+  .cert-fase { position: relative; z-index: 1; margin: 6px 0 4px; font-size: 18px; font-weight: bold; color: #b45309; text-transform: uppercase; }
+  .cert-personagem { position: relative; z-index: 1; display: inline-block; margin-top: 6px; padding: 6px 16px; border: 1px solid #b45309; border-radius: 999px; font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #78350f; background: #fef3c7; }
+  .cert-rodape { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+  .cert-assin { width: 190px; font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #374151; }
+  .cert-lin { border-top: 1.5px solid #1e1b4b; margin-bottom: 4px; }
+  .cert-selo { width: 92px; height: 92px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fef08a, #d97706 60%, #92400e); border: 3px double #78350f; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35); }
+  .cert-selo span { font-size: 28px; line-height: 1; }
+  .cert-selo small { font-family: Arial, Helvetica, sans-serif; font-size: 9px; letter-spacing: 2px; margin-top: 2px; }
+
+  .circulos { display: flex; justify-content: center; gap: 10px; margin-bottom: 12px; }
+  .circ { width: 22px; height: 22px; border-radius: 50%; border: 3px solid #a5b4fc; background: transparent; transition: background 0.3s, border-color 0.3s; }
+  .circ.ok { background: #22c55e; border-color: #22c55e; }
+
+  /* Festa de vitória */
+  .festa { position: fixed; inset: 0; z-index: 1000; background: radial-gradient(circle at 50% 40%, #312e81, #0f0d2e); overflow: hidden; }
+  .camada { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .cortina { position: absolute; top: 0; bottom: 0; width: clamp(50px, 10vw, 110px); background: repeating-linear-gradient(90deg, #7f1d1d 0 24px, #b91c1c 24px 48px); box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5); pointer-events: none; }
+  .cortina.esq { left: 0; border-right: 6px solid #facc15; }
+  .cortina.dir { right: 0; border-left: 6px solid #facc15; }
+  .cortina::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 36px; background: repeating-linear-gradient(90deg, #facc15 0 5px, transparent 5px 12px); }
+  .bandeiras { position: absolute; top: 0; left: 0; right: 0; height: 90px; display: flex; justify-content: space-evenly; align-items: flex-start; padding-top: 12px; pointer-events: none; }
+  .bandeiras::before { content: ''; position: absolute; top: 12px; left: 0; right: 0; height: 2px; background: #fde68a; }
+  .bandeira { position: relative; width: 44px; height: 58px; margin-top: 10px; clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: top center; animation: balanca 2s ease-in-out infinite alternate; }
+  @keyframes balanca { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+  .guirlanda { position: absolute; top: 100px; left: 0; right: 0; display: flex; justify-content: space-evenly; pointer-events: none; }
+  .guirlanda::before { content: ''; position: absolute; top: 8px; left: 0; right: 0; height: 2px; background: #22c55e; }
+  .lampada { width: 14px; height: 20px; margin-top: 8px; border-radius: 50%; animation: pisca 1.2s infinite alternate; box-shadow: 0 0 10px currentColor; }
+  @keyframes pisca { from { opacity: 0.35; } to { opacity: 1; } }
+  .balao { position: absolute; bottom: -100px; width: 50px; height: 62px; border-radius: 50% 50% 50% 50% / 45% 45% 55% 55%; }
+  .balao::after { content: ''; position: absolute; left: 50%; bottom: -40px; width: 1px; height: 40px; background: #e2e8f0; }
+  .confete { position: absolute; width: 10px; height: 14px; border-radius: 2px; }
+  .painel-tematico { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: min(480px, 86vw); background: linear-gradient(160deg, #312e81, #1e1b4b); border: 4px solid #f59e0b; border-radius: 18px; padding: 20px; text-align: center; box-shadow: 0 0 40px rgba(245, 158, 11, 0.4); z-index: 2; }
+  .painel-tematico h2 { margin: 0 0 8px; font-size: 24px; color: #fde68a; }
+  .painel-tematico p { margin: 10px 0; font-size: 16px; }
+  .carta-cena { perspective: 900px; width: 170px; height: 230px; margin: 16px auto 0; }
+  .carta-grande { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 1.1s cubic-bezier(0.3, 1.3, 0.6, 1); }
+  .carta-grande.virada { transform: rotateY(180deg) scale(1.25); }
+  .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border: 4px solid #f59e0b; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; }
+  .frente { background: repeating-linear-gradient(45deg, #1e1b4b 0 10px, #312e81 10px 20px); font-size: 64px; color: #f59e0b; font-weight: bold; }
+  .verso { transform: rotateY(180deg); background: #fefce8; color: #1e1b4b; }
+  .verso img { width: 110px; height: 110px; object-fit: cover; object-position: top; border-radius: 8px; margin-bottom: 6px; }
+  .verso .serie { font-size: 12px; color: #555; }
+  .verso .nome { font-size: 18px; font-weight: bold; margin-top: 4px; }
+  .mesa { position: absolute; left: 0; right: 0; bottom: 0; height: 70px; background: repeating-conic-gradient(#b91c1c 0 25%, #fef2f2 0 50%) 0 0 / 36px 36px; border-top: 4px solid #fff; }
+  .mesa::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 14px; background: radial-gradient(circle at 18px 0, #b91c1c 17px, transparent 18px) 0 0 / 36px 14px repeat-x; }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 20px; }
+    .conta { font-size: 20px; }
+    .fundo { grid-template-columns: repeat(6, 1fr); }
+    .logo { font-size: 34px; letter-spacing: 2px; }
+    .logo span { font-size: 16px; letter-spacing: 5px; }
+    .cert-titulo { font-size: 28px; letter-spacing: 2px; }
+    .cert-nome { font-size: 22px; }
+    .cert-miolo { padding: 26px 18px 22px; }
+  }
+
+  /* Impressão direta do Certificado para PDF */
+  @media print {
+    body * { visibility: hidden !important; }
+    .cert-wrap, .cert-wrap * { visibility: visible !important; }
+    .cert-wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0; background: white; }
+    .cert { width: 100%; max-width: 800px; box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .acoes { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="fundo" class="fundo"></div>
+
+<div id="tela-nome" class="tela-inicio">
+  <div class="caixa">
+    <h1 class="logo">Cara<span>a</span>Cara</h1>
+    <p class="sub">Elimine personagens resolvendo contas de decimais e descubra quem está na carta virada.</p>
+    <label>Digite seu nome:
+      <input id="nome" type="text" maxlength="60" placeholder="Seu nome" autocomplete="off">
+    </label>
+    <div>
+      <button id="btn-comecar" class="btn hidden">Começar</button>
+    </div>
+  </div>
+</div>
+
+<main class="container">
+  <section id="jogo" class="hidden">
+    <div class="status">
+      <span>Fase: <strong id="fase-num">1</strong></span>
+      <span>Sequência: <strong id="seq">0</strong>/<strong id="alvo">3</strong></span>
+      <span>Cartas ativas: <strong id="ativas">24</strong></span>
+    </div>
+    <div id="circulos" class="circulos"></div>
+    <div id="mensagem" class="mensagem"></div>
+    <div id="area" class="painel"></div>
+    <div id="grid" class="grid"></div>
+  </section>
+</main>
+
+<div id="festa" class="festa hidden">
+  <div id="festa-confetes" class="camada"></div>
+  <div id="festa-baloes" class="camada"></div>
+  <div class="cortina esq"></div>
+  <div class="cortina dir"></div>
+  <div id="festa-bandeiras" class="bandeiras"></div>
+  <div id="festa-lampadas" class="guirlanda"></div>
+  <div class="painel-tematico">
+    <h2 id="festa-titulo"></h2>
+    <div class="carta-cena">
+      <div id="carta-grande" class="carta-grande">
+        <div class="face frente">?</div>
+        <div id="verso" class="face verso">
+          <!-- O conteúdo do verso é montado dinamicamente com imagem -->
+        </div>
+      </div>
+    </div>
+    <p id="festa-texto"></p>
+    <button id="festa-btn" class="btn">Continuar</button>
+  </div>
+  <div class="mesa"></div>
+</div>
+
+<script>
+const ATRIBUTOS = [
+  'É do sexo masculino',
+  'É humano',
+  'Tem cabelo loiro',
+  'Tem cabelo branco ou prateado',
+  'Tem cabelo ruivo ou laranja',
+  'Tem cabelo longo',
+  'Usa óculos',
+  'Usa chapéu ou boné',
+  'Tem barba ou bigode',
+  'Tem cicatriz visível',
+  'Usa uniforme ou roupa de escola',
+  'Usa máscara ou capa',
+  'Tem olhos de cor incomum',
+  'Usa espada ou arma branca',
+  'É adulto',
+  'Tem poderes sobrenaturais',
+  'Tem características de animal',
+  'Faz parte de uma equipe ou bando',
+  'É protagonista da sua série',
+  'É vilão'
+];
+
+const PERSONAGENS = [
+  { n: 'Goku', s: 'Dragon Ball', a: [0,1,14,15,17,18] },
+  { n: 'Vegeta', s: 'Dragon Ball', a: [0,1,14,15,17,19] },
+  { n: 'Gohan', s: 'Dragon Ball', a: [0,1,15,17] },
+  { n: 'Piccolo', s: 'Dragon Ball', a: [0,14,15,17] },
+  { n: 'Freeza', s: 'Dragon Ball', a: [0,12,14,15,19] },
+  { n: 'Cell', s: 'Dragon Ball', a: [0,15,19] },
+  { n: 'Majin Boo', s: 'Dragon Ball', a: [0,15,19] },
+  { n: 'Bulma', s: 'Dragon Ball', a: [1,5,14,17] },
+  { n: 'Kuririn', s: 'Dragon Ball', a: [0,1,17] },
+  { n: 'Trunks', s: 'Dragon Ball', a: [0,1,13,17,18] },
+  { n: 'Naruto Uzumaki', s: 'Naruto', a: [0,1,2,9,15,17,18] },
+  { n: 'Sasuke Uchiha', s: 'Naruto', a: [0,1,13,15,17] },
+  { n: 'Sakura Haruno', s: 'Naruto', a: [1,5,17] },
+  { n: 'Kakashi Hatake', s: 'Naruto', a: [0,1,3,11,14,17] },
+  { n: 'Itachi Uchiha', s: 'Naruto', a: [0,1,12,14,15,17,19] },
+  { n: 'Gaara', s: 'Naruto', a: [0,1,4,15,17] },
+  { n: 'Hinata Hyuga', s: 'Naruto', a: [1,5,12,17] },
+  { n: 'Jiraiya', s: 'Naruto', a: [0,1,3,8,14,17] },
+  { n: 'Madara Uchiha', s: 'Naruto', a: [0,1,5,12,14,15,19] },
+  { n: 'Rock Lee', s: 'Naruto', a: [0,1,10] },
+  { n: 'Luffy', s: 'One Piece', a: [0,1,7,9,15,17,18] },
+  { n: 'Zoro', s: 'One Piece', a: [0,1,9,13,14,17] },
+  { n: 'Nami', s: 'One Piece', a: [1,4,17] },
+  { n: 'Usopp', s: 'One Piece', a: [0,1,17] },
+  { n: 'Sanji', s: 'One Piece', a: [0,1,2,14,17] },
+  { n: 'Chopper', s: 'One Piece', a: [0,7,15,16,17] },
+  { n: 'Robin', s: 'One Piece', a: [1,5,14,17] },
+  { n: 'Franky', s: 'One Piece', a: [0,1,14,17] },
+  { n: 'Brook', s: 'One Piece', a: [0,7,13,14,15,17] },
+  { n: 'Shanks', s: 'One Piece', a: [0,1,4,7,9,14,17] },
+  { n: 'Yuji Itadori', s: 'Jujutsu Kaisen', a: [0,1,10,17,18] },
+  { n: 'Megumi Fushiguro', s: 'Jujutsu Kaisen', a: [0,1,10,15,17] },
+  { n: 'Nobara Kugisaki', s: 'Jujutsu Kaisen', a: [1,10,15,17] },
+  { n: 'Satoru Gojo', s: 'Jujutsu Kaisen', a: [0,1,3,11,14,15,17] },
+  { n: 'Sukuna', s: 'Jujutsu Kaisen', a: [0,9,12,14,15,19] },
+  { n: 'Maki Zenin', s: 'Jujutsu Kaisen', a: [1,13,17] },
+  { n: 'Toji Fushiguro', s: 'Jujutsu Kaisen', a: [0,1,13,14] },
+  { n: 'Panda', s: 'Jujutsu Kaisen', a: [0,16,17] },
+  { n: 'Nanami', s: 'Jujutsu Kaisen', a: [0,1,6,14,17] },
+  { n: 'Tanjiro', s: 'Demon Slayer', a: [0,1,9,10,13,17,18] },
+  { n: 'Nezuko', s: 'Demon Slayer', a: [10,11,15] },
+  { n: 'Zenitsu', s: 'Demon Slayer', a: [0,1,2,10,13,17] },
+  { n: 'Inosuke', s: 'Demon Slayer', a: [0,1,11,13,16,17] },
+  { n: 'Giyu Tomioka', s: 'Demon Slayer', a: [0,1,5,13,14,17] },
+  { n: 'Kyojuro Rengoku', s: 'Demon Slayer', a: [0,1,2,13,14,17] },
+  { n: 'Shinobu Kocho', s: 'Demon Slayer', a: [1,10,13,14,17] },
+  { n: 'Muzan Kibutsuji', s: 'Demon Slayer', a: [0,3,14,15,19] },
+  { n: 'Ash Ketchum', s: 'Pokémon', a: [0,1,7,18] },
+  { n: 'Pikachu', s: 'Pokémon', a: [0,15,16] },
+  { n: 'Misty', s: 'Pokémon', a: [1,4,17] },
+  { n: 'Brock', s: 'Pokémon', a: [0,1,14,17] },
+  { n: 'Jessie', s: 'Pokémon', a: [1,5,17,19] },
+  { n: 'James', s: 'Pokémon', a: [0,1,17,19] },
+  { n: 'Gary Oak', s: 'Pokémon', a: [0,1,17] },
+  { n: 'Professor Carvalho', s: 'Pokémon', a: [0,1,8,14,17] },
+  { n: 'Eren Yeager', s: 'Outros', a: [0,1,13,17,18] },
+  { n: 'Levi Ackerman', s: 'Outros', a: [0,1,13,14,17] },
+  { n: 'Light Yagami', s: 'Outros', a: [0,1,10,19] },
+  { n: 'L', s: 'Outros', a: [0,1,14] },
+  { n: 'Edward Elric', s: 'Outros', a: [0,1,2,13,18] }
+];
+
+const FASES = {
+  1: { alvo: 3, titulo: 'Fase 1: Adição e Subtração de Decimais' },
+  2: { alvo: 1, titulo: 'Fase 2: Multiplicação de Decimais' },
+  3: { alvo: 1, titulo: 'Fase 3: Divisão de Decimais' }
+};
+
+const CORES_SERIE = {
+  'Dragon Ball': '#f97316',
+  'Naruto': '#f59e0b',
+  'One Piece': '#ef4444',
+  'Jujutsu Kaisen': '#6366f1',
+  'Demon Slayer': '#10b981',
+  'Pokémon': '#eab308',
+  'Outros': '#ec4899'
+};
+
+const CORES_FESTA = ['#ef4444', '#facc15', '#22c55e', '#38bdf8', '#ec4899', '#f97316', '#a78bfa'];
+
+const S = {
+  nome: '',
+  fase: 1,
+  cartas: [],
+  secreto: null,
+  seq: 0,
+  mat: null,
+  opcoes: [],
+  caindo: [],
+  stage: 'math'
+};
+
+let festaTimers = [];
+let festaIntervalos = [];
+
+const $ = id => document.getElementById(id);
+const area = $('area');
+const grid = $('grid');
+
+function alvo() { return FASES[S.fase].alvo; }
+function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+function embaralhar(arr) {
+  const r = arr.slice();
+  for (let i = r.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [r[i], r[j]] = [r[j], r[i]];
+  }
+  return r;
+}
+function fmtN(v, dec) { return v.toFixed(dec).replace('.', ','); }
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function slug(n) {
+  return n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+/* ---------- Fundo Cara a Cara ---------- */
+
+function montarFundo() {
+  $('fundo').innerHTML = PERSONAGENS.map(p =>
+    `<div class="tile"><img src="personagens/${slug(p.n)}.png" alt="" onerror="this.remove()"><span>${escHtml(p.n)}</span></div>`
+  ).join('');
+}
+
+function setMsg(texto, tipo = 'info') {
+  const m = $('mensagem');
+  m.textContent = texto;
+  m.className = 'mensagem ' + tipo;
+}
+
+function renderStatus() {
+  $('fase-num').textContent = S.fase;
+  $('seq').textContent = S.seq;
+  $('alvo').textContent = alvo();
+  $('ativas').textContent = S.cartas.filter(c => c.ativa).length;
+  $('circulos').innerHTML = Array.from({ length: alvo() }, (_, i) =>
+    `<span class="circ${i < S.seq ? ' ok' : ''}"></span>`).join('');
+}
+
+function renderGrid() {
+  if (['cert', 'fim', 'festa'].includes(S.stage)) {
+    grid.innerHTML = '';
+    return;
+  }
+  const cards = S.cartas.map(c => {
+    const cor = CORES_SERIE[c.serie] || '#475569';
+    const classes = ['card'];
+    if (!c.ativa) classes.push('off');
+    if (S.caindo.includes(c.id)) classes.push('cair');
+    if (S.stage === 'chute' && c.ativa) classes.push('clicavel');
+    return `<div class="${classes.join(' ')}" data-id="${c.id}" style="border-color:${cor}">
+      <img src="personagens/${slug(c.nome)}.png" alt="" onerror="this.remove()">
+      <span class="serie">${escHtml(c.serie)}</span>
+      <span class="nome">${escHtml(c.nome)}</span>
+    </div>`;
+  }).join('');
+  grid.innerHTML = cards + `<div class="card secreta"><span class="nome">?</span><span class="serie">Carta virada</span></div>`;
+}
+
+function certificadoHTML() {
+  const data = new Date().toLocaleDateString('pt-BR');
+  const eFaseFinal = S.fase === 3;
+  const tituloCert = eFaseFinal ? "CERTIFICADO FINAL" : "CERTIFICADO";
+  const descFase = eFaseFinal ? "OPERAÇÕES COM NÚMEROS DECIMAIS (MÓDULO COMPLETO)" : FASES[S.fase].titulo;
+
+  return `<div class="cert-wrap"><div class="cert"><div class="cert-miolo">
+    <span class="cert-canto tl">✦</span><span class="cert-canto tr">✦</span>
+    <span class="cert-canto bl">✦</span><span class="cert-canto br">✦</span>
+    <div class="cert-marca">Cara a Cara · Matemática</div>
+    <div class="cert-titulo">${tituloCert}</div>
+    <div class="cert-sub">de conclusão com excelência</div>
+    <div class="cert-ornamento"></div>
+    <p class="cert-texto">Certificamos que</p>
+    <div class="cert-nome">${escHtml(S.nome)}</div>
+    <p class="cert-texto">concluiu com êxito a</p>
+    <p class="cert-fase">${escHtml(descFase)}</p>
+    <p class="cert-texto">descobrindo o personagem final</p>
+    <span class="cert-personagem">${escHtml(S.secreto.nome)} · ${escHtml(S.secreto.serie)}</span>
+    <div class="cert-rodape">
+      <div class="cert-assin"><div class="cert-lin"></div>Professor(a) responsável</div>
+      <div class="cert-selo"><span>★</span><small>VÁLIDO</small></div>
+      <div class="cert-assin"><div class="cert-lin"></div>${data}</div>
+    </div>
+  </div></div></div>
+  <div class="acoes">
+    <button class="btn" data-acao="baixar">Baixar Certificado em PDF</button>
+    ${eFaseFinal 
+      ? `<button class="btn sec" data-acao="reiniciar">Jogar Novamente</button>` 
+      : `<button class="btn sec" data-acao="continuar">Próxima Fase</button>`}
+  </div>`;
+}
+
+function renderArea() {
+  let h = '';
+  switch (S.stage) {
+    case 'math':
+      h = `<p class="rotulo">Resolva a conta (use vírgula ou ponto nos decimais)</p>
+           <div class="conta"><span>${S.mat.texto} =</span><input id="resp" type="text" inputmode="decimal" autocomplete="off"></div>
+           <div style="text-align:center"><button class="btn" data-acao="responder">Responder</button></div>`;
+      break;
+    case 'atributo':
+      h = `<p class="rotulo">Clique em um atributo: as cartas que não correspondem a ele serão eliminadas</p>
+           <p class="dica">Escolha o atributo correto para eliminar cartas erradas.</p>
+           <div class="atributos">${S.opcoes.map(i =>
+             `<button class="btn" data-acao="atributo" data-idx="${i}">${ATRIBUTOS[i]}</button>`).join('')}</div>`;
+      break;
+    case 'animando':
+      h = `<p class="rotulo">Eliminando as cartas que não correspondem ao atributo...</p>`;
+      break;
+    case 'chute':
+      h = `<p class="rotulo">Qual destes personagens é a carta virada?</p>
+           <p class="dica">Clique em um dos personagens que ainda estão ativos.</p>`;
+      break;
+    case 'cert':
+      h = certificadoHTML();
+      break;
+  }
+  area.innerHTML = h;
+  if (S.stage === 'math') {
+    const campo = $('resp');
+    if (campo) campo.focus();
+  }
+}
+
+function renderTudo() {
+  renderStatus();
+  renderArea();
+  renderGrid();
+}
+
+function gerarConta() {
+  if (S.fase === 1) {
+    const dec = Math.random() < 0.5 ? 1 : 2;
+    const escala = dec === 1 ? 10 : 100;
+    let x = randInt(10, 200);
+    let y = randInt(10, 200);
+
+    if (Math.random() < 0.5) {
+      return { texto: `${fmtN(x / escala, dec)} + ${fmtN(y / escala, dec)}`, resp: (x + y) / escala };
+    } else {
+      if (y > x) [x, y] = [y, x];
+      return { texto: `${fmtN(x / escala, dec)} - ${fmtN(y / escala, dec)}`, resp: (x - y) / escala };
+    }
+  }
+
+  if (S.fase === 2) {
+    const x = randInt(11, 99) / 10;
+    const y = randInt(11, 99) / 10;
+    const resp = Math.round((x * y) * 100) / 100;
+    return {
+      texto: `${fmtN(x, 1)} × ${fmtN(y, 1)}`,
+      resp: resp
+    };
+  }
+
+  if (S.fase === 3) {
+    const quociente = randInt(11, 99) / 10;
+    const divisor = randInt(11, 49) / 10;
+    const dividendo = Math.round((quociente * divisor) * 100) / 100;
+    return {
+      texto: `${fmtN(dividendo, 2)} ÷ ${fmtN(divisor, 1)}`,
+      resp: quociente
+    };
+  }
+}
+
+function proximaConta() {
+  S.stage = 'math';
+  S.mat = gerarConta();
+  renderTudo();
+}
+
+function contarOpcoesValidas(cartas, secreto) {
+  let total = 0;
+  ATRIBUTOS.forEach((_, i) => {
+    const tem = secreto.a.has(i);
+    const n = cartas.filter(c => c.a.has(i) !== tem).length;
+    if (n >= 1 && n <= 4 && n < cartas.length) total++;
+  });
+  return total;
+}
+
+function iniciarFase() {
+  let cartas, secreto;
+  let tentativas = 0;
+  do {
+    const sorteados = embaralhar(PERSONAGENS).slice(0, 24);
+    cartas = sorteados.map((p, i) => ({ id: i, nome: p.n, serie: p.s, a: new Set(p.a), ativa: true }));
+    secreto = cartas[randInt(0, cartas.length - 1)];
+    tentativas++;
+  } while (contarOpcoesValidas(cartas, secreto) < 3 && tentativas < 500);
+
+  S.cartas = cartas;
+  S.secreto = secreto;
+  S.seq = 0;
+  S.caindo = [];
+  const msgAcertos = alvo() === 1 ? '1 conta' : `${alvo()} contas seguidas`;
+  setMsg(`${FASES[S.fase].titulo}. Acerte ${msgAcertos} para escolher um atributo que elimina cartas.`, 'info');
+  proximaConta();
+}
+
+function responder() {
+  const campo = $('resp');
+  const txt = campo.value.trim().replace(',', '.');
+  const v = Number(txt);
+  if (txt === '' || isNaN(v)) {
+    setMsg('Digite a resposta em número, usando vírgula ou ponto.', 'erro');
+    campo.focus();
+    return;
+  }
+  if (Math.abs(v - S.mat.resp) < 0.001) {
+    S.seq++;
+    if (S.seq >= alvo()) {
+      setMsg('Excelente! Escolha um atributo: ele vai eliminar as cartas que não correspondem.', 'ok');
+      abrirAtributos();
+    } else {
+      setMsg(`Correto! Sequência: ${S.seq}/${alvo()}`, 'ok');
+      proximaConta();
+    }
+  } else {
+    S.seq = 0;
+    setMsg(`Resposta incorreta. A resposta era ${fmtN(S.mat.resp, 2)}. A sequência voltou a zero.`, 'erro');
+    proximaConta();
+  }
+}
+
+function abrirAtributos() {
+  const ativas = S.cartas.filter(c => c.ativa);
+  const candidatos = [];
+
+  ATRIBUTOS.forEach((_, i) => {
+    const tem = S.secreto.a.has(i);
+    const n = ativas.filter(c => c.a.has(i) !== tem).length;
+    if (n >= 1 && n <= 4) candidatos.push({ i, n });
+  });
+
+  if (!candidatos.length) {
+    if (ativas.length <= 5) {
+      S.stage = 'chute';
+      renderTudo();
+    } else {
+      proximaConta();
+    }
+    return;
+  }
+
+  candidatos.sort((a, b) => b.n - a.n || Math.random() - 0.5);
+  const escolhidos = candidatos.slice(0, 3);
+
+  S.opcoes = escolhidos.map(c => c.i);
+  S.stage = 'atributo';
+  renderTudo();
+}
+
+function escolherAtributo(idx) {
+  const tem = S.secreto.a.has(idx);
+  const remover = S.cartas.filter(c => c.ativa && c.a.has(idx) !== tem).map(c => c.id);
+  S.seq = 0;
+  const txt = ATRIBUTOS[idx];
+  const frase = txt.charAt(0).toLowerCase() + txt.slice(1);
+  setMsg(`Atributo escolhido: "${txt}". O personagem ${tem ? '' : 'não '}${frase.replace(/^é /, 'é ').replace(/^tem /, 'tem ')}. ${remover.length} carta(s) eliminada(s).`, 'info');
+
+  S.caindo = remover;
+  S.stage = 'animando';
+  renderStatus();
+  renderArea();
+  renderGrid();
+
+  setTimeout(() => {
+    S.cartas.forEach(c => { if (remover.includes(c.id)) c.ativa = false; });
+    S.caindo = [];
+    const ativas = S.cartas.filter(c => c.ativa).length;
+    if (ativas <= 5) {
+      S.stage = 'chute';
+      renderTudo();
+    } else {
+      proximaConta();
+    }
+  }, 900);
+}
+
+function chutar(carta) {
+  if (carta.id === S.secreto.id) {
+    S.stage = 'festa';
+    setMsg(`Você descobriu o personagem: ${carta.nome}!`, 'ok');
+    renderTudo();
+    abrirFesta(carta);
+  } else {
+    S.seq = 0;
+    setMsg(`Não é ${carta.nome}. A sequência voltou a zero, continue com as perguntas.`, 'erro');
+    proximaConta();
+  }
+}
+
+/* ---------- Festa ---------- */
+
+function limparFesta() {
+  festaIntervalos.forEach(clearInterval);
+  festaTimers.forEach(clearTimeout);
+  festaIntervalos = [];
+  festaTimers = [];
+  $('festa-baloes').innerHTML = '';
+  $('festa-confetes').innerHTML = '';
+  $('festa-bandeiras').innerHTML = '';
+  $('festa-lampadas').innerHTML = '';
+}
+
+function criarBandeiras() {
+  $('festa-bandeiras').innerHTML = Array.from({ length: 18 }, (_, i) =>
+    `<span class="bandeira" style="background:${CORES_FESTA[i % CORES_FESTA.length]};animation-delay:${(i * 0.1).toFixed(1)}s"></span>`
+  ).join('');
+}
+
+function criarLampadas() {
+  $('festa-lampadas').innerHTML = Array.from({ length: 24 }, (_, i) =>
+    `<span class="lampada" style="background:${CORES_FESTA[i % CORES_FESTA.length]};color:${CORES_FESTA[i % CORES_FESTA.length]};animation-delay:${(i * 0.15).toFixed(2)}s"></span>`
+  ).join('');
+}
+
+function soltarBalao() {
+  const box = $('festa-baloes');
+  const b = document.createElement('div');
+  b.className = 'balao';
+  b.style.background = CORES_FESTA[randInt(0, CORES_FESTA.length - 1)];
+  b.style.left = randInt(2, 92) + '%';
+  box.appendChild(b);
+  const anim = b.animate(
+    [{ transform: 'translateY(0)' }, { transform: `translateY(-${box.clientHeight + 160}px)` }],
+    { duration: randInt(6000, 9000), easing: 'linear', fill: 'forwards' }
+  );
+  anim.onfinish = () => b.remove();
+}
+
+function dispararConfete(lado) {
+  const box = $('festa-confetes');
+  const w = box.clientWidth;
+  const h = box.clientHeight;
+  for (let i = 0; i < 60; i++) {
+    const p = document.createElement('span');
+    p.className = 'confete';
+    p.style.background = CORES_FESTA[randInt(0, CORES_FESTA.length - 1)];
+    p.style.left = (lado === 'esq' ? 0 : w) + 'px';
+    p.style.top = h + 'px';
+    box.appendChild(p);
+    const dx = (lado === 'esq' ? 1 : -1) * randInt(80, Math.round(w * 0.45));
+    const dy = -randInt(Math.round(h * 0.5), Math.round(h * 0.85));
+    const rot = randInt(-720, 720);
+    const anim = p.animate([
+      { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${dx}px, ${dy}px) rotate(${rot}deg)`, opacity: 1, offset: 0.5 },
+      { transform: `translate(${dx * 1.1}px, ${dy * 0.2 + h * 0.6}px) rotate(${rot * 2}deg)`, opacity: 0 }
+    ], { duration: randInt(2200, 3200), easing: 'ease-out', fill: 'forwards' });
+    anim.onfinish = () => p.remove();
+  }
+}
+
+function abrirFesta(carta) {
+  limparFesta();
+  $('festa').classList.remove('hidden');
+  criarBandeiras();
+  criarLampadas();
+
+  const grande = $('carta-grande');
+  grande.classList.remove('virada');
+
+  // Insere a imagem e as informações do personagem no verso da carta
+  $('verso').innerHTML = `
+    <img src="personagens/${slug(carta.nome)}.png" alt="${escHtml(carta.nome)}" onerror="this.remove()">
+    <span class="serie">${escHtml(carta.serie)}</span>
+    <span class="nome">${escHtml(carta.nome)}</span>
+  `;
+  $('verso').style.borderColor = CORES_SERIE[carta.serie] || '#f59e0b';
+  $('festa-titulo').textContent = `Parabéns, ${S.nome}!`;
+  $('festa-texto').textContent = `Você descobriu o personagem ${carta.nome}, de ${carta.serie}.`;
+  $('festa-btn').textContent = 'Ver Certificado';
+
+  festaTimers.push(setTimeout(() => grande.classList.add('virada'), 400));
+  for (let i = 0; i < 12; i++) festaTimers.push(setTimeout(soltarBalao, i * 250));
+  festaIntervalos.push(setInterval(soltarBalao, 900));
+
+  dispararConfete('esq');
+  dispararConfete('dir');
+  festaIntervalos.push(setInterval(() => {
+    dispararConfete('esq');
+    dispararConfete('dir');
+  }, 2200));
+}
+
+function fecharFesta() {
+  limparFesta();
+  $('festa').classList.add('hidden');
+  S.stage = 'cert';
+  setMsg('Certificado liberado. Clique no botão para salvar em PDF na sua pasta de Downloads.', 'ok');
+  renderTudo();
+}
+
+/* ---------- Salvamento em PDF com o Nome Personalizado do Aluno ---------- */
+
+function formatarNomePdf(nomeOriginal) {
+  return nomeOriginal
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+function baixarCertificado() {
+  const tituloAntigo = document.title;
+  const nomeFormatado = formatarNomePdf(S.nome) || 'ALUNO';
+  
+  document.title = `${nomeFormatado}.pdf`;
+  window.print();
+  
+  setTimeout(() => {
+    document.title = tituloAntigo;
+  }, 1000);
+}
+
+/* ---------- Eventos ---------- */
+
+$('nome').addEventListener('input', () => {
+  $('btn-comecar').classList.toggle('hidden', !$('nome').value.trim());
+});
+
+$('btn-comecar').addEventListener('click', () => {
+  S.nome = $('nome').value.trim();
+  $('tela-nome').classList.add('hidden');
+  $('fundo').classList.add('oculto');
+  $('jogo').classList.remove('hidden');
+  S.fase = 1;
+  iniciarFase();
+});
+
+$('nome').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && $('nome').value.trim()) $('btn-comecar').click();
+});
+
+area.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const acao = b.dataset.acao;
+  if (acao === 'responder') responder();
+  else if (acao === 'atributo') escolherAtributo(Number(b.dataset.idx));
+  else if (acao === 'baixar') baixarCertificado();
+  else if (acao === 'continuar') { S.fase++; iniciarFase(); }
+  else if (acao === 'reiniciar') { S.fase = 1; iniciarFase(); }
+});
+
+area.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'resp') responder();
+});
+
+grid.addEventListener('click', e => {
+  if (S.stage !== 'chute') return;
+  const el = e.target.closest('.card');
+  if (!el || el.classList.contains('secreta')) return;
+  const carta = S.cartas[Number(el.dataset.id)];
+  if (!carta || !carta.ativa) return;
+  chutar(carta);
+});
+
+$('festa-btn').addEventListener('click', fecharFesta);
+
+montarFundo();
+</script>
+</body>
+</html>
