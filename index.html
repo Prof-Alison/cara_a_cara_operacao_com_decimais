@@ -5,8 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cara a Cara - Decimais</title>
 <style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #1e1b4b; color: #f8fafc; min-height: 100vh; }
+  * { 
+    box-sizing: border-box; 
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  body { 
+    margin: 0; 
+    font-family: Arial, Helvetica, sans-serif; 
+    background: #1e1b4b; 
+    color: #f8fafc; 
+    min-height: 100vh; 
+  }
   .hidden { display: none !important; }
   .container { max-width: 1100px; margin: 0 auto; padding: 20px; position: relative; z-index: 2; }
 
@@ -14,19 +27,19 @@
   .fundo { position: fixed; inset: 0; z-index: 0; display: grid; grid-template-columns: repeat(10, 1fr); grid-auto-rows: 1fr; gap: 2px; background: #0f0d2e; }
   .fundo.oculto { display: none; }
   .tile { position: relative; overflow: hidden; background: linear-gradient(160deg, #312e81, #1e1b4b); display: flex; align-items: flex-end; justify-content: center; }
-  .tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; pointer-events: none; }
   .tile span { position: relative; z-index: 1; width: 100%; text-align: center; font-size: 9px; padding: 2px 3px; background: rgba(15, 13, 46, 0.8); color: #e0e7ff; }
   .fundo::after { content: ''; position: absolute; inset: 0; background: rgba(15, 13, 46, 0.55); }
 
-  .painel { background: #312e81; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-  .tela-inicio { position: fixed; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .painel { position: relative; background: #312e81; border-radius: 12px; padding: 20px; margin-bottom: 16px; overflow: hidden; }
+  .tela-inicio { position: fixed; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15, 13, 46, 0.95); }
   .tela-inicio .caixa { background: rgba(49, 46, 129, 0.95); border: 3px solid #f59e0b; border-radius: 16px; padding: 28px; width: min(460px, 92vw); text-align: center; box-shadow: 0 0 40px rgba(0, 0, 0, 0.6); }
   .logo { margin: 0 0 6px; font-size: 44px; font-weight: 900; color: #fde68a; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 3px 0 #b45309, 0 0 18px rgba(245, 158, 11, 0.6); line-height: 1.1; }
   .logo span { display: block; font-size: 22px; letter-spacing: 8px; color: #f59e0b; text-shadow: 0 2px 0 #78350f; }
   .tela-inicio .sub { margin: 14px 0 18px; font-size: 14px; color: #c7d2fe; line-height: 1.4; }
   h1 { margin: 0 0 12px; font-size: 26px; text-align: center; }
   label { display: block; margin-bottom: 12px; font-size: 16px; text-align: left; }
-  input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 18px; margin-top: 6px; }
+  input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 18px; margin-top: 6px; -webkit-user-select: text; user-select: text; }
   .btn { background: #f59e0b; color: #1e1b4b; border: none; border-radius: 8px; padding: 12px 20px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 4px; }
   .btn:hover { filter: brightness(1.08); }
   .btn.sec { background: #64748b; color: #fff; }
@@ -43,10 +56,16 @@
   .atributos .btn { margin: 0; }
   .acoes { text-align: center; margin-top: 12px; }
   
+  /* Tela de Bloqueio por Perda de Tela Cheia */
+  .tela-bloqueio { position: fixed; inset: 0; z-index: 9999; background: #0f0d2e; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+  .caixa-bloqueio { background: #1e1b4b; border: 3px solid #ef4444; border-radius: 16px; padding: 32px; max-width: 450px; box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); }
+  .caixa-bloqueio h2 { color: #ef4444; margin-top: 0; font-size: 26px; }
+  .caixa-bloqueio p { font-size: 16px; line-height: 1.5; color: #e0e7ff; margin-bottom: 24px; }
+
   /* Grid e Estilo das Cartas */
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
   .card { position: relative; background: #1e1b4b; border: 3px solid #475569; border-radius: 10px; padding: 8px 6px; min-height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; transition: transform 0.2s, background 0.2s; }
-  .card img { width: 54px; height: 54px; object-fit: cover; object-position: top; border-radius: 6px; margin-bottom: 4px; }
+  .card img { width: 54px; height: 54px; object-fit: cover; object-position: top; border-radius: 6px; margin-bottom: 4px; pointer-events: none; }
   .card .serie { font-size: 10px; color: #a5b4fc; margin-bottom: 2px; }
   .card .nome { font-size: 13px; font-weight: bold; }
   .card.off { opacity: 0.5; pointer-events: none; border-style: dotted; }
@@ -120,7 +139,7 @@
   .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border: 4px solid #f59e0b; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; }
   .frente { background: repeating-linear-gradient(45deg, #1e1b4b 0 10px, #312e81 10px 20px); font-size: 64px; color: #f59e0b; font-weight: bold; }
   .verso { transform: rotateY(180deg); background: #fefce8; color: #1e1b4b; }
-  .verso img { width: 110px; height: 110px; object-fit: cover; object-position: top; border-radius: 8px; margin-bottom: 6px; }
+  .verso img { width: 110px; height: 110px; object-fit: cover; object-position: top; border-radius: 8px; margin-bottom: 6px; pointer-events: none; }
   .verso .serie { font-size: 12px; color: #555; }
   .verso .nome { font-size: 18px; font-weight: bold; margin-top: 4px; }
   .mesa { position: absolute; left: 0; right: 0; bottom: 0; height: 70px; background: repeating-conic-gradient(#b91c1c 0 25%, #fef2f2 0 50%) 0 0 / 36px 36px; border-top: 4px solid #fff; }
@@ -137,13 +156,15 @@
     .cert-miolo { padding: 26px 18px 22px; }
   }
 
-  /* Impressão direta do Certificado para PDF */
+  /* BLOQUEIO DE IMPRESSÃO DA TELA PARA CERTIFICADO */
+  body.imprimindo-certificado * { visibility: hidden !important; }
+  body.imprimindo-certificado .cert-wrap, 
+  body.imprimindo-certificado .cert-wrap * { visibility: visible !important; }
+  body.imprimindo-certificado .cert-wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0; background: white; }
+  body.imprimindo-certificado .cert { width: 100%; max-width: 800px; box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
   @media print {
-    body * { visibility: hidden !important; }
-    .cert-wrap, .cert-wrap * { visibility: visible !important; }
-    .cert-wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0; background: white; }
-    .cert { width: 100%; max-width: 800px; box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .acoes { display: none !important; }
+    body:not(.imprimindo-certificado) { display: none !important; }
   }
 </style>
 </head>
@@ -159,8 +180,16 @@
       <input id="nome" type="text" maxlength="60" placeholder="Seu nome" autocomplete="off">
     </label>
     <div>
-      <button id="btn-comecar" class="btn hidden">Começar</button>
+      <button id="btn-comecar" class="btn hidden">Entrar em Tela Cheia e Jogar</button>
     </div>
+  </div>
+</div>
+
+<div id="tela-bloqueio" class="tela-bloqueio hidden">
+  <div class="caixa-bloqueio">
+    <h2>Conexão Encerrada!</h2>
+    <p>Você saiu do modo de Tela Cheia ou alterou a janela do jogo. Para garantir a integridade da partida, seu progresso foi reiniciado.</p>
+    <button id="btn-reiniciar-tudo" class="btn">Reiniciar Partida</button>
   </div>
 </div>
 
@@ -190,9 +219,7 @@
     <div class="carta-cena">
       <div id="carta-grande" class="carta-grande">
         <div class="face frente">?</div>
-        <div id="verso" class="face verso">
-          <!-- O conteúdo do verso é montado dinamicamente com imagem -->
-        </div>
+        <div id="verso" class="face verso"></div>
       </div>
     </div>
     <p id="festa-texto"></p>
@@ -202,6 +229,42 @@
 </div>
 
 <script>
+let jogoAtivo = false;
+
+/* ---------- CONTROLE DE TELA CHEIA E QUEDA DE CONEXÃO ---------- */
+
+function entrarTelaCheia() {
+  const doc = document.documentElement;
+  if (doc.requestFullscreen) {
+    doc.requestFullscreen();
+  } else if (doc.webkitRequestFullscreen) { /* Safari */
+    doc.webkitRequestFullscreen();
+  } else if (doc.msRequestFullscreen) { /* IE11 */
+    doc.msRequestFullscreen();
+  }
+}
+
+// Se o aluno sair do modo de tela cheia com o jogo em andamento: QUEDA DE CONEXÃO!
+function monitorarTelaCheia() {
+  const estaEmTelaCheia = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+  if (!estaEmTelaCheia && jogoAtivo && S.stage !== 'cert') {
+    jogoAtivo = false;
+    $('tela-bloqueio').classList.remove('hidden');
+  }
+}
+
+document.addEventListener('fullscreenchange', monitorarTelaCheia);
+document.addEventListener('webkitfullscreenchange', monitorarTelaCheia);
+document.addEventListener('msfullscreenchange', monitorarTelaCheia);
+
+// Bloqueio de clique direito e F12
+document.addEventListener('contextmenu', event => event.preventDefault());
+document.addEventListener('keydown', e => {
+  if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j'))) {
+    e.preventDefault();
+  }
+});
+
 const ATRIBUTOS = [
   'É do sexo masculino',
   'É humano',
@@ -692,7 +755,6 @@ function abrirFesta(carta) {
   const grande = $('carta-grande');
   grande.classList.remove('virada');
 
-  // Insere a imagem e as informações do personagem no verso da carta
   $('verso').innerHTML = `
     <img src="personagens/${slug(carta.nome)}.png" alt="${escHtml(carta.nome)}" onerror="this.remove()">
     <span class="serie">${escHtml(carta.serie)}</span>
@@ -723,7 +785,7 @@ function fecharFesta() {
   renderTudo();
 }
 
-/* ---------- Salvamento em PDF com o Nome Personalizado do Aluno ---------- */
+/* ---------- Salvamento em PDF ---------- */
 
 function formatarNomePdf(nomeOriginal) {
   return nomeOriginal
@@ -740,10 +802,13 @@ function baixarCertificado() {
   const nomeFormatado = formatarNomePdf(S.nome) || 'ALUNO';
   
   document.title = `${nomeFormatado}.pdf`;
+  
+  document.body.classList.add('imprimindo-certificado');
   window.print();
   
   setTimeout(() => {
     document.title = tituloAntigo;
+    document.body.classList.remove('imprimindo-certificado');
   }, 1000);
 }
 
@@ -758,6 +823,18 @@ $('btn-comecar').addEventListener('click', () => {
   $('tela-nome').classList.add('hidden');
   $('fundo').classList.add('oculto');
   $('jogo').classList.remove('hidden');
+  
+  entrarTelaCheia();
+  jogoAtivo = true;
+  
+  S.fase = 1;
+  iniciarFase();
+});
+
+$('btn-reiniciar-tudo').addEventListener('click', () => {
+  $('tela-bloqueio').classList.add('hidden');
+  entrarTelaCheia();
+  jogoAtivo = true;
   S.fase = 1;
   iniciarFase();
 });
