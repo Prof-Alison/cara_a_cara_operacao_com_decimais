@@ -230,6 +230,7 @@
 
 <script>
 let jogoAtivo = false;
+let baixandoCertificado = false;
 
 /* ---------- CONTROLE DE TELA CHEIA E QUEDA DE CONEXÃO ---------- */
 
@@ -237,17 +238,17 @@ function entrarTelaCheia() {
   const doc = document.documentElement;
   if (doc.requestFullscreen) {
     doc.requestFullscreen();
-  } else if (doc.webkitRequestFullscreen) { /* Safari */
+  } else if (doc.webkitRequestFullscreen) {
     doc.webkitRequestFullscreen();
-  } else if (doc.msRequestFullscreen) { /* IE11 */
+  } else if (doc.msRequestFullscreen) {
     doc.msRequestFullscreen();
   }
 }
 
-// Se o aluno sair do modo de tela cheia com o jogo em andamento: QUEDA DE CONEXÃO!
 function monitorarTelaCheia() {
   const estaEmTelaCheia = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
-  if (!estaEmTelaCheia && jogoAtivo && S.stage !== 'cert') {
+  
+  if (!estaEmTelaCheia && jogoAtivo && S.stage !== 'cert' && !baixandoCertificado) {
     jogoAtivo = false;
     $('tela-bloqueio').classList.remove('hidden');
   }
@@ -257,7 +258,6 @@ document.addEventListener('fullscreenchange', monitorarTelaCheia);
 document.addEventListener('webkitfullscreenchange', monitorarTelaCheia);
 document.addEventListener('msfullscreenchange', monitorarTelaCheia);
 
-// Bloqueio de clique direito e F12
 document.addEventListener('contextmenu', event => event.preventDefault());
 document.addEventListener('keydown', e => {
   if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j'))) {
@@ -405,8 +405,6 @@ function escHtml(s) {
 function slug(n) {
   return n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
-
-/* ---------- Fundo Cara a Cara ---------- */
 
 function montarFundo() {
   $('fundo').innerHTML = PERSONAGENS.map(p =>
@@ -684,8 +682,6 @@ function chutar(carta) {
   }
 }
 
-/* ---------- Festa ---------- */
-
 function limparFesta() {
   festaIntervalos.forEach(clearInterval);
   festaTimers.forEach(clearTimeout);
@@ -777,15 +773,19 @@ function abrirFesta(carta) {
   }, 2200));
 }
 
+// O BOTÃO CONTINUAR AGORA FORÇA O RETORNO PARA TELA CHEIA
 function fecharFesta() {
   limparFesta();
   $('festa').classList.add('hidden');
+  
+  // Reativa Tela Cheia no clique de Continuar
+  entrarTelaCheia();
+  jogoAtivo = true;
+  
   S.stage = 'cert';
   setMsg('Certificado liberado. Clique no botão para salvar em PDF na sua pasta de Downloads.', 'ok');
   renderTudo();
 }
-
-/* ---------- Salvamento em PDF ---------- */
 
 function formatarNomePdf(nomeOriginal) {
   return nomeOriginal
@@ -798,21 +798,27 @@ function formatarNomePdf(nomeOriginal) {
 }
 
 function baixarCertificado() {
+  baixandoCertificado = true;
+  
   const tituloAntigo = document.title;
   const nomeFormatado = formatarNomePdf(S.nome) || 'ALUNO';
   
   document.title = `${nomeFormatado}.pdf`;
-  
   document.body.classList.add('imprimindo-certificado');
+  
   window.print();
   
   setTimeout(() => {
     document.title = tituloAntigo;
     document.body.classList.remove('imprimindo-certificado');
+    
+    setTimeout(() => {
+      baixandoCertificado = false;
+    }, 500);
   }, 1000);
 }
 
-/* ---------- Eventos ---------- */
+/* ---------- EVENTOS DO SISTEMA ---------- */
 
 $('nome').addEventListener('input', () => {
   $('btn-comecar').classList.toggle('hidden', !$('nome').value.trim());
@@ -850,8 +856,16 @@ area.addEventListener('click', e => {
   if (acao === 'responder') responder();
   else if (acao === 'atributo') escolherAtributo(Number(b.dataset.idx));
   else if (acao === 'baixar') baixarCertificado();
-  else if (acao === 'continuar') { S.fase++; iniciarFase(); }
-  else if (acao === 'reiniciar') { S.fase = 1; iniciarFase(); }
+  else if (acao === 'continuar') { 
+    entrarTelaCheia(); // Força Tela Cheia ao ir para a Próxima Fase
+    S.fase++; 
+    iniciarFase(); 
+  }
+  else if (acao === 'reiniciar') { 
+    entrarTelaCheia(); // Força Tela Cheia ao Reiniciar
+    S.fase = 1; 
+    iniciarFase(); 
+  }
 });
 
 area.addEventListener('keydown', e => {
